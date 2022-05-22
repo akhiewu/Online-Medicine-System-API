@@ -47,9 +47,7 @@ class DistanceField(models.FloatField):
         self.geo_field = geo_field
 
     def get_prep_value(self, value):
-        if isinstance(value, Distance):
-            return value
-        return super().get_prep_value(value)
+        return value if isinstance(value, Distance) else super().get_prep_value(value)
 
     def get_db_prep_value(self, value, connection, prepared=False):
         if not isinstance(value, Distance):

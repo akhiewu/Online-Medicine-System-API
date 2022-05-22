@@ -15,13 +15,13 @@ class GeoModelAdminMixin:
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if (
-            isinstance(db_field, models.GeometryField) and
-            (db_field.dim < 3 or self.gis_widget.supports_3d)
+            not isinstance(db_field, models.GeometryField)
+            or db_field.dim >= 3
+            and not self.gis_widget.supports_3d
         ):
-            kwargs['widget'] = self.gis_widget(**self.gis_widget_kwargs)
-            return db_field.formfield(**kwargs)
-        else:
             return super().formfield_for_dbfield(db_field, request, **kwargs)
+        kwargs['widget'] = self.gis_widget(**self.gis_widget_kwargs)
+        return db_field.formfield(**kwargs)
 
 
 class GISModelAdmin(GeoModelAdminMixin, ModelAdmin):
@@ -90,12 +90,11 @@ class GeoModelAdmin(ModelAdmin):
         for viewing/editing 2D GeometryFields (OpenLayers 2 does not support
         3D editing).
         """
-        if isinstance(db_field, models.GeometryField) and db_field.dim < 3:
-            # Setting the widget with the newly defined widget.
-            kwargs['widget'] = self.get_map_widget(db_field)
-            return db_field.formfield(**kwargs)
-        else:
+        if not isinstance(db_field, models.GeometryField) or db_field.dim >= 3:
             return super().formfield_for_dbfield(db_field, request, **kwargs)
+        # Setting the widget with the newly defined widget.
+        kwargs['widget'] = self.get_map_widget(db_field)
+        return db_field.formfield(**kwargs)
 
     def get_map_widget(self, db_field):
         """
@@ -112,6 +111,8 @@ class GeoModelAdmin(ModelAdmin):
         else:
             collection_type = 'None'
 
+
+
         class OLMap(self.widget):
             template_name = self.map_template
             geom_type = db_field.geom_type
@@ -119,7 +120,7 @@ class GeoModelAdmin(ModelAdmin):
             wms_options = ''
             if self.wms_options:
                 wms_options = ["%s: '%s'" % pair for pair in self.wms_options.items()]
-                wms_options = ', %s' % ', '.join(wms_options)
+                wms_options = f", {', '.join(wms_options)}"
 
             params = {
                 'default_lon': self.default_lon,
@@ -156,6 +157,7 @@ class GeoModelAdmin(ModelAdmin):
                 'wms_options': wms_options,
                 'debug': self.debug,
             }
+
         return OLMap
 
 
