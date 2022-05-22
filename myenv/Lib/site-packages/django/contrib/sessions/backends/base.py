@@ -59,7 +59,7 @@ class SessionBase:
 
     @property
     def key_salt(self):
-        return 'django.contrib.sessions.' + self.__class__.__qualname__
+        return f'django.contrib.sessions.{self.__class__.__qualname__}'
 
     def get(self, key, default=None):
         return self._session.get(key, default)
@@ -72,10 +72,9 @@ class SessionBase:
     def setdefault(self, key, value):
         if key in self._session:
             return self._session[key]
-        else:
-            self.modified = True
-            self._session[key] = value
-            return value
+        self.modified = True
+        self._session[key] = value
+        return value
 
     def set_test_cookie(self):
         self[self.TEST_COOKIE_NAME] = self.TEST_COOKIE_VALUE
@@ -162,10 +161,7 @@ class SessionBase:
         """
         Validate session key on assignment. Invalid values will set to None.
         """
-        if self._validate_session_key(value):
-            self.__session_key = value
-        else:
-            self.__session_key = None
+        self.__session_key = value if self._validate_session_key(value) else None
 
     session_key = property(_get_session_key)
     _session_key = property(_get_session_key, _set_session_key)

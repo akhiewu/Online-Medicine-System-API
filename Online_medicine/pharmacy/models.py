@@ -28,11 +28,15 @@ class InvoiceManage(models.Model):
         
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'invoice':
-                return(field.name, self.invoice.name, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields]      
+            return (
+                (field.name, self.invoice.name, field.get_internal_type())
+                if field.name == 'invoice'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            )      
         
         
         
@@ -50,11 +54,15 @@ class Pharmacist(models.Model):
     
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'invoice':
-                return(field.name, self.invoice.name, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields] 
+            return (
+                (field.name, self.invoice.name, field.get_internal_type())
+                if field.name == 'invoice'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            ) 
         
         
     
@@ -79,11 +87,15 @@ class MedicineDescription(models.Model):
     
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'medicine':
-                return(field.name, self.medicine.title, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields]   
+            return (
+                (field.name, self.medicine.title, field.get_internal_type())
+                if field.name == 'medicine'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            )   
     
         
         
@@ -115,11 +127,15 @@ class CustomerDescription(models.Model):
     
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'customer':
-                return(field.name, self.customer.name, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields]
+            return (
+                (field.name, self.customer.name, field.get_internal_type())
+                if field.name == 'customer'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            )
         
         
         
@@ -147,21 +163,29 @@ class onlinemedicine_description(models.Model):
     
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'title':
-                return(field.name, self.vision.name, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields]
+            return (
+                (field.name, self.vision.name, field.get_internal_type())
+                if field.name == 'title'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            )
         
         
         
     def get_fields(self):
         def get_dynamic_fields(field):
-            if field.name == 'invoice':
-                return(field.name, self.invoice.name, field.get_internal_type())
-            else:
-                return(field.name, self.value_from_object(self), field.get_internal_type())
-            return[get_dynamic_fields(field) for field in self.__class__._meta.fields]    
+            return (
+                (field.name, self.invoice.name, field.get_internal_type())
+                if field.name == 'invoice'
+                else (
+                    field.name,
+                    self.value_from_object(self),
+                    field.get_internal_type(),
+                )
+            )    
 
         
         

@@ -21,7 +21,7 @@ class SearchVectorExact(Lookup):
         lhs, lhs_params = self.process_lhs(qn, connection)
         rhs, rhs_params = self.process_rhs(qn, connection)
         params = lhs_params + rhs_params
-        return '%s @@ %s' % (lhs, rhs), params
+        return f'{lhs} @@ {rhs}', params
 
 
 class SearchVectorField(Field):
@@ -45,9 +45,7 @@ class SearchConfig(Expression):
 
     @classmethod
     def from_parameter(cls, config):
-        if config is None or isinstance(config, cls):
-            return config
-        return cls(config)
+        return config if config is None or isinstance(config, cls) else cls(config)
 
     def get_source_expressions(self):
         return [self.config]
@@ -57,7 +55,7 @@ class SearchConfig(Expression):
 
     def as_sql(self, compiler, connection):
         sql, params = compiler.compile(self.config)
-        return '%s::regconfig' % sql, params
+        return f'{sql}::regconfig', params
 
 
 class SearchVectorCombinable:
@@ -117,7 +115,7 @@ class SearchVector(SearchVectorCombinable, Func):
         extra_params = []
         if clone.weight:
             weight_sql, extra_params = compiler.compile(clone.weight)
-            sql = 'setweight({}, {})'.format(sql, weight_sql)
+            sql = f'setweight({sql}, {weight_sql})'
         return sql, config_params + params + extra_params
 
 
@@ -182,7 +180,7 @@ class SearchQuery(SearchQueryCombinable, Func):
     def as_sql(self, compiler, connection, function=None, template=None):
         sql, params = super().as_sql(compiler, connection, function, template)
         if self.invert:
-            sql = '!!(%s)' % sql
+            sql = f'!!({sql})'
         return sql, params
 
     def __invert__(self):
@@ -192,7 +190,7 @@ class SearchQuery(SearchQueryCombinable, Func):
 
     def __str__(self):
         result = super().__str__()
-        return ('~%s' % result) if self.invert else result
+        return f'~{result}' if self.invert else result
 
 
 class CombinedSearchQuery(SearchQueryCombinable, CombinedExpression):
@@ -201,7 +199,7 @@ class CombinedSearchQuery(SearchQueryCombinable, CombinedExpression):
         super().__init__(lhs, connector, rhs, output_field)
 
     def __str__(self):
-        return '(%s)' % super().__str__()
+        return f'({super().__str__()})'
 
 
 class SearchRank(Func):
@@ -267,12 +265,13 @@ class SearchHeadline(Func):
         options_params = []
         if self.options:
             # getquoted() returns a quoted bytestring of the adapted value.
-            options_params.append(', '.join(
-                '%s=%s' % (
-                    option,
-                    psycopg2.extensions.adapt(value).getquoted().decode(),
-                ) for option, value in self.options.items()
-            ))
+            options_params.append(
+                ', '.join(
+                    f'{option}={psycopg2.extensions.adapt(value).getquoted().decode()}'
+                    for option, value in self.options.items()
+                )
+            )
+
             options_sql = ', %s'
         sql, params = super().as_sql(
             compiler, connection, function=function, template=template,

@@ -101,12 +101,15 @@ class OGRGeometry(GDALBase):
             # OGR pointer (c_void_p) was the input.
             g = geom_input
         else:
-            raise GDALException('Invalid input type for OGR Geometry construction: %s' % type(geom_input))
+            raise GDALException(
+                f'Invalid input type for OGR Geometry construction: {type(geom_input)}'
+            )
+
 
         # Now checking the Geometry pointer before finishing initialization
         # by setting the pointer for the object.
         if not g:
-            raise GDALException('Cannot create OGR Geometry from input: %s' % geom_input)
+            raise GDALException(f'Cannot create OGR Geometry from input: {geom_input}')
         self.ptr = g
 
         # Assigning the SpatialReference object to the geometry, if valid.
@@ -119,10 +122,7 @@ class OGRGeometry(GDALBase):
     # Pickle routines
     def __getstate__(self):
         srs = self.srs
-        if srs:
-            srs = srs.wkt
-        else:
-            srs = None
+        srs = srs.wkt if srs else None
         return bytes(self.wkb), srs
 
     def __setstate__(self, state):
@@ -145,8 +145,9 @@ class OGRGeometry(GDALBase):
     def from_bbox(cls, bbox):
         "Construct a Polygon from a bounding box (4-tuple)."
         x0, y0, x1, y1 = bbox
-        return OGRGeometry('POLYGON((%s %s, %s %s, %s %s, %s %s, %s %s))' % (
-            x0, y0, x0, y1, x1, y1, x1, y0, x0, y0))
+        return OGRGeometry(
+            f'POLYGON(({x0} {y0}, {x0} {y1}, {x1} {y1}, {x1} {y0}, {x0} {y0}))'
+        )
 
     @staticmethod
     def from_json(geom_input):
@@ -278,17 +279,17 @@ class OGRGeometry(GDALBase):
         elif srs is None:
             srs_ptr = None
         else:
-            raise TypeError('Cannot assign spatial reference with object of type: %s' % type(srs))
+            raise TypeError(
+                f'Cannot assign spatial reference with object of type: {type(srs)}'
+            )
+
         capi.assign_srs(self.ptr, srs_ptr)
 
     srs = property(_get_srs, _set_srs)
 
     # The SRID property
     def _get_srid(self):
-        srs = self.srs
-        if srs:
-            return srs.srid
-        return None
+        return srs.srid if (srs := self.srs) else None
 
     def _set_srid(self, srid):
         if isinstance(srid, int) or srid is None:
@@ -340,10 +341,7 @@ class OGRGeometry(GDALBase):
     @property
     def wkb(self):
         "Return the WKB representation of the Geometry."
-        if sys.byteorder == 'little':
-            byteorder = 1  # wkbNDR (from ogr_core.h)
-        else:
-            byteorder = 0  # wkbXDR
+        byteorder = 1 if sys.byteorder == 'little' else 0
         sz = self.wkb_size
         # Creating the unsigned character buffer, and passing it in by reference.
         buf = (c_ubyte * sz)()
@@ -360,10 +358,7 @@ class OGRGeometry(GDALBase):
     def ewkt(self):
         "Return the EWKT representation of the Geometry."
         srs = self.srs
-        if srs and srs.srid:
-            return 'SRID=%s;%s' % (srs.srid, self.wkt)
-        else:
-            return self.wkt
+        return f'SRID={srs.srid};{self.wkt}' if srs and srs.srid else self.wkt
 
     # #### Geometry Methods ####
     def clone(self):
@@ -539,18 +534,20 @@ class LineString(OGRGeometry):
 
     def __getitem__(self, index):
         "Return the Point at the given index."
-        if 0 <= index < self.point_count:
-            x, y, z = c_double(), c_double(), c_double()
-            capi.get_point(self.ptr, index, byref(x), byref(y), byref(z))
-            dim = self.coord_dim
-            if dim == 1:
-                return (x.value,)
-            elif dim == 2:
-                return (x.value, y.value)
-            elif dim == 3:
-                return (x.value, y.value, z.value)
-        else:
-            raise IndexError('Index out of range when accessing points of a line string: %s.' % index)
+        if not 0 <= index < self.point_count:
+            raise IndexError(
+                f'Index out of range when accessing points of a line string: {index}.'
+            )
+
+        x, y, z = c_double(), c_double(), c_double()
+        capi.get_point(self.ptr, index, byref(x), byref(y), byref(z))
+        dim = self.coord_dim
+        if dim == 1:
+            return (x.value,)
+        elif dim == 2:
+            return (x.value, y.value)
+        elif dim == 3:
+            return (x.value, y.value, z.value)
 
     def __len__(self):
         "Return the number of points in the LineString."
@@ -602,7 +599,9 @@ class Polygon(OGRGeometry):
         if 0 <= index < self.geom_count:
             return OGRGeometry(capi.clone_geom(capi.get_geom_ref(self.ptr, index)), self.srs)
         else:
-            raise IndexError('Index out of range when accessing rings of a polygon: %s.' % index)
+            raise IndexError(
+                f'Index out of range when accessing rings of a polygon: {index}.'
+            )
 
     # Polygon Properties
     @property
@@ -641,7 +640,9 @@ class GeometryCollection(OGRGeometry):
         if 0 <= index < self.geom_count:
             return OGRGeometry(capi.clone_geom(capi.get_geom_ref(self.ptr, index)), self.srs)
         else:
-            raise IndexError('Index out of range when accessing geometry in a collection: %s.' % index)
+            raise IndexError(
+                f'Index out of range when accessing geometry in a collection: {index}.'
+            )
 
     def __len__(self):
         "Return the number of geometries in this Geometry Collection."

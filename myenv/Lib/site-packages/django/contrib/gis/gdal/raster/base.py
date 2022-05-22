@@ -23,12 +23,9 @@ class GDALRasterBase(GDALBase):
             # The number of domains is unknown, so retrieve data until there
             # are no more values in the ctypes array.
             counter = 0
-            domain = meta_list[counter]
-            while domain:
+            while domain := meta_list[counter]:
                 domain_list.append(domain.decode())
                 counter += 1
-                domain = meta_list[counter]
-
         # Free domain list array.
         capi.free_dsl(meta_list)
 
@@ -46,12 +43,10 @@ class GDALRasterBase(GDALBase):
             # there are no more values in the ctypes array.
             domain_meta = {}
             counter = 0
-            item = data[counter]
-            while item:
+            while item := data[counter]:
                 key, val = item.decode().split('=')
                 domain_meta[key] = val
                 counter += 1
-                item = data[counter]
             # The default domain values are returned if domain is None.
             result[domain or 'DEFAULT'] = domain_meta
         return result
